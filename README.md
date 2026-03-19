@@ -40,7 +40,7 @@ To use this app, you need to host your timetable on a service like **GitHub Gist
 
 ### Sample Data
 You can find a reference for the required data format here:
-[View Sample Timetable (GitHub Gist)](https://github.com/tc5206/pebble_Train2Time/blob/main/timetable_test.md)
+[View Sample Timetable (GitHub Gist)](timetable_test.md)
 
 * **Remarks Support**: Supports `\n` for up to 2 lines of text (approx. 9 full-width characters per line).
 
