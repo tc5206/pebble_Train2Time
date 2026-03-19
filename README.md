@@ -7,7 +7,7 @@ This project, including the source code and this documentation, was generated an
 ## Overview
 
 <p align="center">
-  <img src="path/to/your/image_0.png" alt="Train 2 Time Screenshot" width="300"/>
+  <img src="screenshot.png" alt="Train 2 Time Screenshot" width="300"/>
 </p>
 
 Inspired by [TrainTime by otoone_dev](https://apps.rebble.io/en_US/application/5904a0c90dfc329df8000706), this app was created to improve usability and tailor the experience to specific commuting needs. It fetches timetable data from user-defined online sources and provides a simple countdown to the next departure, as seen in the screenshot above.
