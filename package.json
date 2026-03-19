@@ -1,0 +1,89 @@
+{
+    "author": "Parsley_fz8",
+    "dependencies": {
+        "pebble-clay": "^1.0.4"
+    },
+    "keywords": [],
+    "name": "train-2-time",
+    "pebble": {
+        "capabilities": [
+            "configurable"
+        ],
+        "displayName": "Train 2 Time",
+        "enableMultiJS": true,
+        "messageKeys": [
+            "KEY_STATION",
+            "KEY_DEST",
+            "KEY_HOUR",
+            "KEY_MIN",
+            "KEY_NOTE1",
+            "KEY_REQUEST_NEXT",
+            "KEY_REQUEST_PREV",
+            "KEY_REQUEST_SWITCH",
+            "KEY_ICON",
+            "KEY_HIGHLIGHT_COLOR",
+            "KEY_HOLIDAY_CONFIG",
+            "KEY_URL_INDEX",
+            "KEY_URL_0",
+            "KEY_URL_1",
+            "KEY_URL_2",
+            "KEY_RANGE",
+            "KEY_MAX_TRAINS"
+        ],
+        "projectType": "native",
+        "resources": {
+            "media": [
+                {
+                    "file": "images/IMAGE_ICON_0",
+                    "menuIcon": true,
+                    "name": "IMAGE_ICON_0",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/IMAGE_ICON_1",
+                    "name": "IMAGE_ICON_1",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/IMAGE_ICON_2",
+                    "name": "IMAGE_ICON_2",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/IMAGE_ICON_3",
+                    "name": "IMAGE_ICON_3",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/IMAGE_ICON_4",
+                    "name": "IMAGE_ICON_4",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/IMAGE_ICON_5",
+                    "name": "IMAGE_ICON_5",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                }
+            ]
+        },
+        "sdkVersion": "3",
+        "targetPlatforms": [
+            "aplite",
+            "basalt",
+            "chalk",
+            "diorite",
+            "emery"
+        ],
+        "uuid": "0fcf7377-3684-472c-9363-1579aca27479",
+        "watchapp": {
+            "watchface": false
+        }
+    },
+    "version": "1.3.0"
+}
