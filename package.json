@@ -28,7 +28,10 @@
             "KEY_URL_1",
             "KEY_URL_2",
             "KEY_RANGE",
-            "KEY_MAX_TRAINS"
+            "KEY_MAX_TRAINS",
+            "KEY_TYPE_TEXT",
+            "KEY_TYPE_COLOR",
+            "KEY_TYPE_BG_COLOR"
         ],
         "projectType": "native",
         "resources": {

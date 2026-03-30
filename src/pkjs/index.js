@@ -72,7 +72,7 @@ function getMainTimetable() {
   xhr.open("GET", url, true);
   xhr.onload = function() {
     if (xhr.status === 200) {
-      var range = parseInt(settings.KEY_RANGE) || 120;
+      var range = parseInt(settings.KEY_RANGE) || 30;
       parseMarkdown(xhr.responseText, range, settings); 
       findNearestTrain();
       sendToPebble();
@@ -119,8 +119,13 @@ function parseMarkdown(text, range, settings) {
         var timePart = parts[0].trim().split(':');
         var h = parseInt(timePart[0]); if (h < 4) h += 24;
         currentStation.modes[currentMode].trains.push({
-          hour: h, min: parseInt(timePart[1]),
-          dest: parts[1] ? parts[1].trim() : "", type: parts[2] ? parts[2].trim() : "", note1: parts[3] ? parts[3].trim() : ""
+          hour: h, 
+          min: parseInt(timePart[1]),
+          dest: parts[1] ? parts[1].trim() : "", 
+          type: parts[2] ? parts[2].trim() : "", 
+          note1: parts[3] ? parts[3].trim() : "",
+          typeColor: parts[4] ? parts[4].trim() : "000000",
+          typeBgColor: parts[5] ? parts[5].trim() : "FFFFFF"
         });
       }
     }
@@ -181,10 +186,12 @@ function sendToPebble() {
   var settings = JSON.parse(localStorage.getItem('clay-settings') || '{}');
   var train = (st.trains && st.trains.length > 0) ? st.trains[currentTrainIdx] : null;
 
-  // 色の優先順位: MD指定 > Clay設定 > 黒(0)
-	var highlightColor = (st.highlightColor !== null && st.highlightColor !== undefined)
-  ? st.highlightColor
-  : parseColor(settings.KEY_HIGHLIGHT_COLOR);
+  var watch_info = Pebble.getActiveWatchInfo ? Pebble.getActiveWatchInfo() : null;
+  var platform = watch_info ? watch_info.platform : 'basalt';
+
+  var highlightColor = (st.highlightColor !== null && st.highlightColor !== undefined)
+    ? st.highlightColor
+    : parseColor(settings.KEY_HIGHLIGHT_COLOR);
 
   var dict = {
     'KEY_STATION': st.name,
@@ -193,12 +200,29 @@ function sendToPebble() {
   };
 
   if (train) {
-    dict['KEY_DEST'] = (train.type ? train.type + " / " : "") + train.dest;
+    if (platform === 'emery') {
+      dict['KEY_TYPE_TEXT'] = train.type || "";
+      dict['KEY_DEST'] = train.dest || "";
+      // --- 追加：色情報を数値に変換して送信 ---
+      dict['KEY_TYPE_COLOR'] = parseInt(train.typeColor, 16);
+      dict['KEY_TYPE_BG_COLOR'] = parseInt(train.typeBgColor, 16);
+    } else {
+      dict['KEY_DEST'] = (train.type ? train.type + " / " : "") + train.dest;
+    }
+    
     dict['KEY_HOUR'] = train.hour;
     dict['KEY_MIN'] = train.min;
-    dict['KEY_NOTE1'] = train.note1;
+    dict['KEY_NOTE1'] = train.note1 || "";
   } else {
-    dict['KEY_DEST'] = ""; dict['KEY_HOUR'] = -1; dict['KEY_MIN'] = 0; dict['KEY_NOTE1'] = "Departed";
+    dict['KEY_DEST'] = "";
+    dict['KEY_HOUR'] = -1;
+    dict['KEY_MIN'] = 0;
+    dict['KEY_NOTE1'] = "";
+    if (platform === 'emery') {
+        dict['KEY_TYPE_TEXT'] = "";
+        dict['KEY_TYPE_COLOR'] = 0xFFFFFF;
+        dict['KEY_TYPE_BG_COLOR'] = 0x000000;
+    }
   }
 
   Pebble.sendAppMessage(dict, function(e) { console.log('Sent'); }, function(e) { console.log('Failed'); });
