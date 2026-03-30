@@ -37,33 +37,22 @@ static void set_layer_layout(int index, TextLayer *layer, int width, const char 
 #else
   Layer *l = text_layer_get_layer(layer);
   GRect frame;
-  // 文字列長（バイト数）で長文判定。全角約5〜6文字(15〜18バイト)以上を基準
-  bool is_long = (text != NULL && strlen(text) > 15); 
 
-  if (is_long) {
-    #if defined(PBL_ROUND)
-      if (index == 1)      frame = GRect(53 + 12, 23, 180 - 81 - 12, 21);
-      else if (index == 3) frame = GRect(12, 46, 180 - 24, 23);
-      else                 frame = layer_get_frame(l);
-    #else
-      if (index == 1)      frame = GRect(35, 21, 144 - 35, 20);
-      else if (index == 3) frame = GRect(0, 42, 144, 20);
-      else                 frame = layer_get_frame(l);
-    #endif
-    text_layer_set_text_alignment(layer, GTextAlignmentLeft);
-  } else {
-    #if defined(PBL_ROUND)
-      if (index == 1)      frame = GRect(53, 23, 180 - 81, 21);
-      else if (index == 3) frame = GRect(0, 46, 180, 23);
-      else                 frame = layer_get_frame(l);
-    #else
-      if (index == 1)      frame = GRect(41, 21, 144 - 41, 20);
-      else if (index == 3) frame = GRect(0, 42, 144, 20);
-      else                 frame = layer_get_frame(l);
-    #endif
-    text_layer_set_text_alignment(layer, (index == 1) ? GTextAlignmentLeft : GTextAlignmentCenter);
-  }
+  // 常に標準の座標（中央揃え用）を適用
+  #if defined(PBL_ROUND)
+    if (index == 1)      frame = GRect(53, 23, 180 - 81, 21); // 駅名
+    else if (index == 3) frame = GRect(0, 46, 180, 23);        // 行先
+    else                 frame = layer_get_frame(l);
+  #else
+    if (index == 1)      frame = GRect(41, 21, 144 - 41, 20);
+    else if (index == 3) frame = GRect(0, 42, 144, 20);
+    else                 frame = layer_get_frame(l);
+  #endif
 
+  // すべて中央揃えに統一（駅名 index 1 を左寄せにしたい場合はここを調整）
+  text_layer_set_text_alignment(layer, (index == 1) ? GTextAlignmentLeft : GTextAlignmentCenter);
+
+  // 枠とサイズを確定させ、溢れたら「...」を出す設定を維持
   layer_set_frame(l, frame);
   text_layer_set_size(layer, frame.size);
   layer_set_bounds(l, GRect(0, 0, frame.size.w, frame.size.h));
@@ -148,8 +137,10 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   Tuple *mn_t = dict_find(iterator, MESSAGE_KEY_KEY_MIN);
   Tuple *cl_t = dict_find(iterator, MESSAGE_KEY_KEY_HIGHLIGHT_COLOR);
   Tuple *ty_t = dict_find(iterator, MESSAGE_KEY_KEY_TYPE_TEXT);
+	#if defined(PBL_PLATFORM_EMERY)
   Tuple *tc_t = dict_find(iterator, MESSAGE_KEY_KEY_TYPE_COLOR);
   Tuple *tb_t = dict_find(iterator, MESSAGE_KEY_KEY_TYPE_BG_COLOR);
+	#endif
 
   static char s_st_buf[64];
   static char s_ty_buf[64];
@@ -168,11 +159,12 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   if(ty_t) {
     strncpy(s_ty_buf, ty_t->value->cstring, sizeof(s_ty_buf) - 1);
     text_layer_set_text(s_type_layer, s_ty_buf);
-    // 引数にバッファを追加
     set_layer_layout(2, s_type_layer, w, s_ty_buf);
   } else {
     s_ty_buf[0] = '\0';
     text_layer_set_text(s_type_layer, s_ty_buf);
+    // データがない場合も呼び出してレイヤーの状態をリセット
+    set_layer_layout(2, s_type_layer, w, s_ty_buf);
   }
 
   // 3. 行先
