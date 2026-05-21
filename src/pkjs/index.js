@@ -1,4 +1,4 @@
-var Clay = require('pebble-clay');
+var Clay = require('@rebble/clay');
 var clayConfig = require('./config');
 var clay = new Clay(clayConfig);
 
@@ -200,7 +200,7 @@ function sendToPebble() {
   };
 
   if (train) {
-    if (platform === 'emery') {
+    if (platform === 'emery' || platform === 'gabbro') {
       dict['KEY_TYPE_TEXT'] = train.type || "";
       dict['KEY_DEST'] = train.dest || "";
       // --- 追加：色情報を数値に変換して送信 ---
@@ -218,7 +218,7 @@ function sendToPebble() {
     dict['KEY_HOUR'] = -1;
     dict['KEY_MIN'] = 0;
     dict['KEY_NOTE1'] = "";
-    if (platform === 'emery') {
+    if (platform === 'emery' || platform === 'gabbro') {
         dict['KEY_TYPE_TEXT'] = "";
         dict['KEY_TYPE_COLOR'] = 0xFFFFFF;
         dict['KEY_TYPE_BG_COLOR'] = 0x000000;

@@ -1,7 +1,7 @@
 {
     "author": "Parsley_fz8",
     "dependencies": {
-        "pebble-clay": "^1.0.4"
+        "@rebble/clay": "^1.0.8"
     },
     "keywords": [],
     "name": "train-2-time",
@@ -37,13 +37,6 @@
         "resources": {
             "media": [
                 {
-                    "file": "images/IMAGE_ICON_0",
-                    "menuIcon": true,
-                    "name": "IMAGE_ICON_0",
-                    "targetPlatforms": null,
-                    "type": "bitmap"
-                },
-                {
                     "file": "images/IMAGE_ICON_1",
                     "name": "IMAGE_ICON_1",
                     "targetPlatforms": null,
@@ -72,6 +65,13 @@
                     "name": "IMAGE_ICON_5",
                     "targetPlatforms": null,
                     "type": "bitmap"
+                },
+                {
+                    "file": "images/IMAGE_ICON_0",
+                    "menuIcon": true,
+                    "name": "IMAGE_ICON_0",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
                 }
             ]
         },
@@ -81,12 +81,14 @@
             "basalt",
             "chalk",
             "diorite",
-            "emery"
+            "emery",
+            "gabbro",
+            "flint"
         ],
         "uuid": "0fcf7377-3684-472c-9363-1579aca27479",
         "watchapp": {
             "watchface": false
         }
     },
-    "version": "1.31.0"
+    "version": "1.4.0"
 }
