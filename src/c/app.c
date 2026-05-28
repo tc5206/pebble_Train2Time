@@ -60,7 +60,6 @@ static void update_countdown() {
   int diff = now_sec - train_sec;
   static char s_count_buf[16];
 
-  // デフォルト色設定
   text_layer_set_text_color(s_countdown_layer, GColorBlack);
   text_layer_set_background_color(s_countdown_layer, GColorClear);
 
@@ -71,7 +70,6 @@ static void update_countdown() {
   } else if (diff <= 180) {
     snprintf(s_count_buf, sizeof(s_count_buf), "%02d:%02d", diff / 60, diff % 60);
     if (diff <= 2 && !s_vibrated_0min) { vibes_double_pulse(); s_vibrated_0min = true; }
-    // ハイライト条件
     if (t->tm_sec % 2 == 0) {
       text_layer_set_text_color(s_countdown_layer, s_highlight_text_color);
       text_layer_set_background_color(s_countdown_layer, s_highlight_bg_color);
@@ -83,6 +81,12 @@ static void update_countdown() {
 }
 
 static void tick_handler(struct tm *t, TimeUnits u) { update_time(); update_countdown(); }
+
+#if defined(PBL_TOUCH)
+static void tap_handler(AccelAxisType axis, int32_t direction) {
+  light_enable_interaction();
+}
+#endif
 
 static void animate_layer(Layer *layer, GRect start, GRect end, int duration, int delay) {
   PropertyAnimation *prop_anim = property_animation_create_layer_frame(layer, &start, &end);
@@ -167,7 +171,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   if (ic_t) {
     int icon_id = (int)ic_t->value->int32;
     if (s_icon_bitmap) gbitmap_destroy(s_icon_bitmap);
-    uint32_t res_id = (icon_id >= 1 && icon_id <= 5) ? (RESOURCE_ID_IMAGE_ICON_1 + (icon_id - 1)) : RESOURCE_ID_IMAGE_ICON_1;
+    uint32_t res_id = (icon_id >= 1 && icon_id <= 7) ? (RESOURCE_ID_IMAGE_ICON_1 + (icon_id - 1)) : RESOURCE_ID_IMAGE_ICON_1;
     s_icon_bitmap = gbitmap_create_with_resource(res_id);
     bitmap_layer_set_bitmap(s_icon_layer, s_icon_bitmap);
   }
@@ -193,19 +197,19 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
 
 #if defined(PBL_PLATFORM_GABBRO)
   if (has_train) {
-    animate_layer(text_layer_get_layer(s_type_layer),   GRect(0, 67, w, 24), GRect(0, 65, w, 24), 300, 100);
-    animate_layer(text_layer_get_layer(s_dest_layer),   GRect(0, 91, w, 32), GRect(0, 89, w, 32), 300, 150);
+    animate_layer(text_layer_get_layer(s_type_layer),   GRect(0,  67, w, 24), GRect(0,  65, w, 24), 300, 100);
+    animate_layer(text_layer_get_layer(s_dest_layer),   GRect(0,  91, w, 32), GRect(0,  89, w, 32), 300, 150);
     animate_layer(text_layer_get_layer(s_depart_layer), GRect(0, 155, w, 28), GRect(0, 153, w, 28), 300, 180);
   }
-  animate_layer(text_layer_get_layer(s_countdown_layer), GRect(0, 123, w, 32), GRect(0, 121, w, 32), 300, 0);
+  animate_layer(text_layer_get_layer(s_countdown_layer), GRect(0, 123, w, 32), GRect(0, 121, w, 32), 300,   0);
   animate_layer(text_layer_get_layer(s_note1_layer),     GRect(0, 183, w, 48), GRect(0, 181, w, 48), 300, 200);
 #elif defined(PBL_PLATFORM_EMERY)
   if (has_train) {
-    animate_layer(text_layer_get_layer(s_type_layer),   GRect(0, 52, w, 24), GRect(0, 49, w, 24), 300, 100);
-    animate_layer(text_layer_get_layer(s_dest_layer),   GRect(0, 76, w, 32), GRect(0, 73, w, 32), 300, 150);
+    animate_layer(text_layer_get_layer(s_type_layer),   GRect(0,  52, w, 24), GRect(0,  49, w, 24), 300, 100);
+    animate_layer(text_layer_get_layer(s_dest_layer),   GRect(0,  76, w, 32), GRect(0,  73, w, 32), 300, 150);
     animate_layer(text_layer_get_layer(s_depart_layer), GRect(0, 143, w, 28), GRect(0, 141, w, 28), 300, 180);
   }
-  animate_layer(text_layer_get_layer(s_countdown_layer), GRect(0, 108, w, 32), GRect(0, 105, w, 32), 300, 0);
+  animate_layer(text_layer_get_layer(s_countdown_layer), GRect(0, 108, w, 32), GRect(0, 105, w, 32), 300,   0);
   animate_layer(text_layer_get_layer(s_note1_layer),     GRect(0, 171, w, 48), GRect(0, 169, w, 48), 300, 200);
 #else
   int h = layer_get_bounds(root).size.h;
@@ -283,7 +287,19 @@ static void init() {
   app_message_register_inbox_received(inbox_received_callback);
   app_message_open(512, 128);
   tick_timer_service_subscribe(SECOND_UNIT, tick_handler);
+
+#if defined(PBL_TOUCH)
+  accel_tap_service_subscribe(tap_handler);
+#endif
 }
 
-static void deinit() { tick_timer_service_unsubscribe(); window_destroy(s_main_window); }
+static void deinit() {
+  tick_timer_service_unsubscribe();
+
+#if defined(PBL_TOUCH)
+  accel_tap_service_unsubscribe();
+#endif
+  window_destroy(s_main_window);
+}
+
 int main() { init(); app_event_loop(); deinit(); }

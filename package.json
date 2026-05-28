@@ -4,7 +4,7 @@
         "@rebble/clay": "^1.0.8"
     },
     "keywords": [],
-    "name": "train-2-time",
+    "name": "train2time",
     "pebble": {
         "capabilities": [
             "configurable"
@@ -72,6 +72,18 @@
                     "name": "IMAGE_ICON_0",
                     "targetPlatforms": null,
                     "type": "bitmap"
+                },
+                {
+                    "file": "images/IMAGE_ICON_6",
+                    "name": "IMAGE_ICON_6",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/IMAGE_ICON_7",
+                    "name": "IMAGE_ICON_7",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
                 }
             ]
         },
@@ -90,5 +102,5 @@
             "watchface": false
         }
     },
-    "version": "1.4.0"
+    "version": "1.6.0"
 }
