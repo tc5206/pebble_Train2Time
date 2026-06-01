@@ -23,6 +23,17 @@ static bool is_dark_color(GColor color) {
 #endif
 }
 
+static const uint32_t S_ICON_IDS[] = {
+  RESOURCE_ID_IMAGE_ICON_0,
+  RESOURCE_ID_IMAGE_ICON_1,
+  RESOURCE_ID_IMAGE_ICON_2,
+  RESOURCE_ID_IMAGE_ICON_3,
+  RESOURCE_ID_IMAGE_ICON_4,
+  RESOURCE_ID_IMAGE_ICON_5,
+  RESOURCE_ID_IMAGE_ICON_6,
+  RESOURCE_ID_IMAGE_ICON_7
+};
+
 static void replace_newline(char *text) {
   for (int i = 0; text[i] != '\0'; i++) {
     if (text[i] == '\\' && text[i+1] == 'n') {
@@ -171,7 +182,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   if (ic_t) {
     int icon_id = (int)ic_t->value->int32;
     if (s_icon_bitmap) gbitmap_destroy(s_icon_bitmap);
-    uint32_t res_id = (icon_id >= 1 && icon_id <= 7) ? (RESOURCE_ID_IMAGE_ICON_1 + (icon_id - 1)) : RESOURCE_ID_IMAGE_ICON_1;
+    uint32_t res_id = (icon_id >= 0 && icon_id <= 7) ? S_ICON_IDS[icon_id] : RESOURCE_ID_IMAGE_ICON_1;
     s_icon_bitmap = gbitmap_create_with_resource(res_id);
     bitmap_layer_set_bitmap(s_icon_layer, s_icon_bitmap);
   }

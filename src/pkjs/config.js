@@ -10,13 +10,17 @@ module.exports = [
         "options": [
           { "label": "Timetable A", "value": "0" },
           { "label": "Timetable B", "value": "1" },
-          { "label": "Timetable C", "value": "2" }
+          { "label": "Timetable C", "value": "2" },
+          { "label": "Timetable D", "value": "3" },
+          { "label": "Timetable E", "value": "4" },
         ],
         "defaultValue": "0"
       },
       { "type": "input", "messageKey": "KEY_URL_0", "label": "URL A" },
       { "type": "input", "messageKey": "KEY_URL_1", "label": "URL B" },
       { "type": "input", "messageKey": "KEY_URL_2", "label": "URL C" },
+      { "type": "input", "messageKey": "KEY_URL_3", "label": "URL D" },
+      { "type": "input", "messageKey": "KEY_URL_4", "label": "URL E" },
       {
         "type": "select",
         "messageKey": "KEY_RANGE",
