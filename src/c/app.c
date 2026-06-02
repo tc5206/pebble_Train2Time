@@ -231,6 +231,33 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   update_countdown();
 }
 
+static void center_long_click_handler(ClickRecognizerRef recognizer, void *context) {
+  // 完全にLoading状態へとステートを遷移
+  s_data_received = false;
+  
+  // 各テキストレイヤーの文字列をクリア（空文字化）
+  text_layer_set_text(s_station_layer, "");
+  text_layer_set_text(s_type_layer, "");
+  text_layer_set_text(s_dest_layer, "");
+  text_layer_set_text(s_depart_layer, "");
+  text_layer_set_text(s_note1_layer, "");
+  
+  if (s_icon_bitmap) {
+    gbitmap_destroy(s_icon_bitmap);
+    s_icon_bitmap = NULL;
+  }
+  bitmap_layer_set_bitmap(s_icon_layer, NULL);
+  
+  update_countdown();
+  
+  // スマホ（JS）側へURLトグル要求を送信
+  DictionaryIterator *iter;
+  if (app_message_outbox_begin(&iter) == APP_MSG_OK) {
+    dict_write_uint8(iter, MESSAGE_KEY_REQUEST_TOGGLE_URL, 1); 
+    app_message_outbox_send();
+  }
+}
+
 static void up_click_handler(ClickRecognizerRef r, void *c) { request_train(MESSAGE_KEY_KEY_REQUEST_PREV); }
 static void down_click_handler(ClickRecognizerRef r, void *c) { request_train(MESSAGE_KEY_KEY_REQUEST_NEXT); }
 static void center_click_handler(ClickRecognizerRef r, void *c) { request_train(MESSAGE_KEY_KEY_REQUEST_SWITCH); }
@@ -239,6 +266,7 @@ static void click_config_provider(void *c) {
   window_single_click_subscribe(BUTTON_ID_UP, up_click_handler);
   window_single_click_subscribe(BUTTON_ID_DOWN, down_click_handler);
   window_single_click_subscribe(BUTTON_ID_SELECT, center_click_handler);
+  window_long_click_subscribe(BUTTON_ID_SELECT, 500, center_long_click_handler, NULL);
 }
 
 static void main_window_load(Window *window) {

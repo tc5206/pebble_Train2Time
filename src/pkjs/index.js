@@ -17,18 +17,70 @@ Pebble.addEventListener('webviewclosed', function(e) {
   fetchTrainData();
 });
 
+// index.js の Pebble.addEventListener('appmessage', ...) 内の条件分岐を修正・拡張
+
 Pebble.addEventListener('appmessage', function(e) {
   var payload = e.payload;
-  if (stations.length === 0) return;
-  if (payload.KEY_REQUEST_NEXT || payload[1] === 1) {
-    if (currentTrainIdx < stations[currentStationIdx].trains.length - 1) currentTrainIdx++;
-  } else if (payload.KEY_REQUEST_PREV || payload[0] === 1) {
-    if (currentTrainIdx > 0) currentTrainIdx--;
-  } else if (payload.KEY_REQUEST_SWITCH || payload[2] === 1) {
-    currentStationIdx = (currentStationIdx + 1) % stations.length;
-    findNearestTrain(); 
+  
+  var toggleUrlKey = (typeof messageKeys !== 'undefined') ? messageKeys.REQUEST_TOGGLE_URL : 'REQUEST_TOGGLE_URL';
+  var nextKey      = (typeof messageKeys !== 'undefined') ? messageKeys.KEY_REQUEST_NEXT   : 'KEY_REQUEST_NEXT';
+  var prevKey      = (typeof messageKeys !== 'undefined') ? messageKeys.KEY_REQUEST_PREV   : 'KEY_REQUEST_PREV';
+  var switchKey    = (typeof messageKeys !== 'undefined') ? messageKeys.KEY_REQUEST_SWITCH : 'KEY_REQUEST_SWITCH';
+
+  // 1. 長押し（URLトグル）の判定
+  if (payload[toggleUrlKey] !== undefined || payload.REQUEST_TOGGLE_URL !== undefined) {
+    var settings = JSON.parse(localStorage.getItem('clay-settings') || '{}');
+    var currentUrlIdx = parseInt(settings.KEY_URL_INDEX || '0');
+    
+    var nextUrlIdx = currentUrlIdx;
+    var foundValidUrl = false;
+    
+    for (var i = 1; i <= 5; i++) {
+      var checkIdx = (currentUrlIdx + i) % 5;
+      var checkUrl = settings['KEY_URL_' + checkIdx];
+      if (checkUrl && checkUrl.trim() !== "") {
+        nextUrlIdx = checkIdx;
+        foundValidUrl = true;
+        break;
+      }
+    }
+    
+    if (!foundValidUrl) {
+      nextUrlIdx = currentUrlIdx;
+    }
+    
+    settings.KEY_URL_INDEX = String(nextUrlIdx);
+    localStorage.setItem('clay-settings', JSON.stringify(settings));
+    
+    currentStationIdx = 0;
+    currentTrainIdx = 0;
+    
+    getMainTimetable();
+    return;
   }
-  sendToPebble();
+
+  // 2. 単押し操作（NEXT, PREV, SWITCH）の判定
+  if (!stations || stations.length === 0) return;
+
+  var isNext   = (payload[nextKey] !== undefined)   || (payload.KEY_REQUEST_NEXT !== undefined);
+  var isPrev   = (payload[prevKey] !== undefined)   || (payload.KEY_REQUEST_PREV !== undefined);
+  var isSwitch = (payload[switchKey] !== undefined) || (payload.KEY_REQUEST_SWITCH !== undefined);
+
+  if (isNext) {
+    if (currentTrainIdx < stations[currentStationIdx].trains.length - 1) {
+      currentTrainIdx++;
+      sendToPebble(); // 直近検索を挟まず、変更後のインデックスでそのまま送信
+    }
+  } else if (isPrev) {
+    if (currentTrainIdx > 0) {
+      currentTrainIdx--;
+      sendToPebble(); // 直近検索を挟まず、変更後のインデックスでそのまま送信
+    }
+  } else if (isSwitch) {
+    currentStationIdx = (currentStationIdx + 1) % stations.length;
+    findNearestTrain(); // 駅切り替え時は現在時刻から再検索
+    sendToPebble();
+  }
 });
 
 function fetchTrainData() {
