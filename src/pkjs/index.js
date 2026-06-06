@@ -194,11 +194,30 @@ function parseMarkdown(text, range, settings) {
 
   for (var s = 0; s < stations.length; s++) {
     var st = stations[s];
-    var modeKey = "weekday";
-    if (isHoliday || isSpecialHoliday || day === 0) modeKey = "holiday";
-    else if (isSpecialSaturday || day === 6) modeKey = "saturday";
+    
+    // 段階的フォールバック（Fallback Chain）による適正なダイヤデータの選択
+    var selectedData = null;
 
-    var selectedData = (st.modes[modeKey] && st.modes[modeKey].trains.length) ? st.modes[modeKey] : st.modes["weekday"];
+    if (isHoliday || isSpecialHoliday || day === 0) {
+      // 日祝日または祝日判定API該当時：holiday -> weekday
+      if (st.modes["holiday"] && st.modes["holiday"].trains.length > 0) {
+        selectedData = st.modes["holiday"];
+      } else {
+        selectedData = st.modes["weekday"];
+      }
+    } else if (isSpecialSaturday || day === 6) {
+      // 土曜日または特定土曜日：saturday -> holiday -> weekday
+      if (st.modes["saturday"] && st.modes["saturday"].trains.length > 0) {
+        selectedData = st.modes["saturday"];
+      } else if (st.modes["holiday"] && st.modes["holiday"].trains.length > 0) {
+        selectedData = st.modes["holiday"];
+      } else {
+        selectedData = st.modes["weekday"];
+      }
+    } else {
+      // 平日：weekday
+      selectedData = st.modes["weekday"];
+    }
     
     st.highlightColor = (selectedData) ? selectedData.color : null;
     st.trains = (selectedData) ? selectedData.trains.filter(function(t) {
