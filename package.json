@@ -40,8 +40,63 @@
         "resources": {
             "media": [
                 {
+                    "file": "images/IMAGE_ICON_8",
+                    "name": "IMAGE_ICON_8",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/IMAGE_ICON_9",
+                    "name": "IMAGE_ICON_9",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
                     "file": "images/IMAGE_ICON_1",
                     "name": "IMAGE_ICON_1",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/IMAGE_ICON_10",
+                    "name": "IMAGE_ICON_10",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/IMAGE_ICON_11",
+                    "name": "IMAGE_ICON_11",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/IMAGE_ICON_12",
+                    "name": "IMAGE_ICON_12",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/IMAGE_ICON_13",
+                    "name": "IMAGE_ICON_13",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/IMAGE_ICON_14",
+                    "name": "IMAGE_ICON_14",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/IMAGE_ICON_0",
+                    "menuIcon": true,
+                    "name": "IMAGE_ICON_0",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/IMAGE_ICON_15",
+                    "name": "IMAGE_ICON_15",
                     "targetPlatforms": null,
                     "type": "bitmap"
                 },
@@ -66,13 +121,6 @@
                 {
                     "file": "images/IMAGE_ICON_5",
                     "name": "IMAGE_ICON_5",
-                    "targetPlatforms": null,
-                    "type": "bitmap"
-                },
-                {
-                    "file": "images/IMAGE_ICON_0",
-                    "menuIcon": true,
-                    "name": "IMAGE_ICON_0",
                     "targetPlatforms": null,
                     "type": "bitmap"
                 },
@@ -105,5 +153,5 @@
             "watchface": false
         }
     },
-    "version": "2.10.0"
+    "version": "2.11.0"
 }

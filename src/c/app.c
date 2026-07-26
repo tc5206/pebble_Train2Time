@@ -31,7 +31,15 @@ static const uint32_t S_ICON_IDS[] = {
   RESOURCE_ID_IMAGE_ICON_4,
   RESOURCE_ID_IMAGE_ICON_5,
   RESOURCE_ID_IMAGE_ICON_6,
-  RESOURCE_ID_IMAGE_ICON_7
+  RESOURCE_ID_IMAGE_ICON_7,
+  RESOURCE_ID_IMAGE_ICON_8,
+  RESOURCE_ID_IMAGE_ICON_9,
+  RESOURCE_ID_IMAGE_ICON_10,
+  RESOURCE_ID_IMAGE_ICON_11,
+  RESOURCE_ID_IMAGE_ICON_12,
+  RESOURCE_ID_IMAGE_ICON_13,
+  RESOURCE_ID_IMAGE_ICON_14,
+  RESOURCE_ID_IMAGE_ICON_15
 };
 
 static void replace_newline(char *text) {
@@ -182,7 +190,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   if (ic_t) {
     int icon_id = (int)ic_t->value->int32;
     if (s_icon_bitmap) gbitmap_destroy(s_icon_bitmap);
-    uint32_t res_id = (icon_id >= 0 && icon_id <= 7) ? S_ICON_IDS[icon_id] : RESOURCE_ID_IMAGE_ICON_1;
+    uint32_t res_id = (icon_id >= 0 && icon_id <= 15) ? S_ICON_IDS[icon_id] : RESOURCE_ID_IMAGE_ICON_15;
     s_icon_bitmap = gbitmap_create_with_resource(res_id);
     bitmap_layer_set_bitmap(s_icon_layer, s_icon_bitmap);
   }
