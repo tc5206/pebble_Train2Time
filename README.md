@@ -31,7 +31,9 @@ Inspired by [TrainTime by otoone_dev](https://apps.rebble.io/en_US/application/5
 | Button | Action |
 | :--- | :--- |
 | **[UP] / [DOWN]** | Change the current train |
+| **Hold [UP] / [DOWN]** | Add to timeline |
 | **[SELECT]** | Change the current station |
+| **Hold [SELECT]** | Change current data slot |
 
 ---
 
