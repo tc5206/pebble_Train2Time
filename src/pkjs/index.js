@@ -11,23 +11,25 @@ var specialSaturdays = [];
 
 Pebble.addEventListener('ready', function(e) { fetchTrainData(); });
 
-// 設定画面が閉じられたときに再読み込みを実行
 Pebble.addEventListener('webviewclosed', function(e) {
   console.log('Webview closed. Reloading settings and data...');
   fetchTrainData();
 });
 
-// index.js の Pebble.addEventListener('appmessage', ...) 内の条件分岐を修正・拡張
-
 Pebble.addEventListener('appmessage', function(e) {
   var payload = e.payload;
   
-  var toggleUrlKey = (typeof messageKeys !== 'undefined') ? messageKeys.REQUEST_TOGGLE_URL : 'REQUEST_TOGGLE_URL';
-  var nextKey      = (typeof messageKeys !== 'undefined') ? messageKeys.KEY_REQUEST_NEXT   : 'KEY_REQUEST_NEXT';
-  var prevKey      = (typeof messageKeys !== 'undefined') ? messageKeys.KEY_REQUEST_PREV   : 'KEY_REQUEST_PREV';
-  var switchKey    = (typeof messageKeys !== 'undefined') ? messageKeys.KEY_REQUEST_SWITCH : 'KEY_REQUEST_SWITCH';
+  var toggleUrlKey   = (typeof messageKeys !== 'undefined') ? messageKeys.REQUEST_TOGGLE_URL : 'REQUEST_TOGGLE_URL';
+  var nextKey        = (typeof messageKeys !== 'undefined') ? messageKeys.KEY_REQUEST_NEXT   : 'KEY_REQUEST_NEXT';
+  var prevKey        = (typeof messageKeys !== 'undefined') ? messageKeys.KEY_REQUEST_PREV   : 'KEY_REQUEST_PREV';
+  var switchKey      = (typeof messageKeys !== 'undefined') ? messageKeys.KEY_REQUEST_SWITCH : 'KEY_REQUEST_SWITCH';
+  var addTimelineKey = (typeof messageKeys !== 'undefined') ? messageKeys.KEY_REQUEST_ADD_TIMELINE : 'KEY_REQUEST_ADD_TIMELINE';
 
-  // 1. 長押し（URLトグル）の判定
+  if (payload[addTimelineKey] !== undefined || payload.KEY_REQUEST_ADD_TIMELINE !== undefined) {
+    addTrainToTimeline();
+    return;
+  }
+
   if (payload[toggleUrlKey] !== undefined || payload.REQUEST_TOGGLE_URL !== undefined) {
     var settings = JSON.parse(localStorage.getItem('clay-settings') || '{}');
     var currentUrlIdx = parseInt(settings.KEY_URL_INDEX || '0');
@@ -59,7 +61,6 @@ Pebble.addEventListener('appmessage', function(e) {
     return;
   }
 
-  // 2. 単押し操作（NEXT, PREV, SWITCH）の判定
   if (!stations || stations.length === 0) return;
 
   var isNext   = (payload[nextKey] !== undefined)   || (payload.KEY_REQUEST_NEXT !== undefined);
@@ -69,23 +70,96 @@ Pebble.addEventListener('appmessage', function(e) {
   if (isNext) {
     if (currentTrainIdx < stations[currentStationIdx].trains.length - 1) {
       currentTrainIdx++;
-      sendToPebble(); // 直近検索を挟まず、変更後のインデックスでそのまま送信
+      sendToPebble();
     }
   } else if (isPrev) {
     if (currentTrainIdx > 0) {
       currentTrainIdx--;
-      sendToPebble(); // 直近検索を挟まず、変更後のインデックスでそのまま送信
+      sendToPebble();
     }
   } else if (isSwitch) {
     currentStationIdx = (currentStationIdx + 1) % stations.length;
-    findNearestTrain(); // 駅切り替え時は現在時刻から再検索
+    findNearestTrain();
     sendToPebble();
   }
 });
 
+function addTrainToTimeline() {
+  var st = stations[currentStationIdx];
+  if (!st || !st.trains || st.trains.length === 0) {
+    sendTimelineResult(0);
+    return;
+  }
+  var train = st.trains[currentTrainIdx];
+  if (!train) {
+    sendTimelineResult(0);
+    return;
+  }
+
+  var now = new Date();
+  var targetDate = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate()
+  );
+
+  if (now.getHours() >= 4 && train.hour >= 24) {
+    targetDate.setDate(targetDate.getDate() + 1);
+  }
+
+  var actualHour = train.hour % 24;
+  targetDate.setHours(actualHour, train.min, 0, 0);
+
+  var typeText = train.type || "";
+  var destText = train.dest || "";
+  var title = (typeText + " " + destText).trim();
+  if (!title) title = st.name || "Train";
+
+  var rawNote = train.note1 || "";
+  var noteText = rawNote.replace(/\\n|\n/g, ' ').trim();
+
+  var pinId = "train2time-" + Date.now();
+  var pin = {
+    "id": pinId,
+    "time": targetDate.toISOString(),
+    "layout": {
+      "type": "genericPin",
+      "title": title,
+      "subtitle": noteText,
+      "tinyIcon": "system://images/NOTIFICATION_LIGHTHOUSE"
+    }
+  };
+
+  Pebble.getTimelineToken(function(token) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("PUT", "https://timeline-api.rebble.io/v1/user/pins/" + pinId, true);
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.setRequestHeader("X-User-Token", token);
+    xhr.onload = function() {
+      if (xhr.status === 200) {
+        sendTimelineResult(1);
+      } else {
+        sendTimelineResult(0);
+      }
+    };
+    xhr.onerror = function() {
+      sendTimelineResult(0);
+    };
+    xhr.send(JSON.stringify(pin));
+  }, function(err) {
+    sendTimelineResult(0);
+  });
+}
+
+function sendTimelineResult(status) {
+  var dict = {};
+  var key = (typeof messageKeys !== 'undefined') ? messageKeys.KEY_TIMELINE_RESULT : 'KEY_TIMELINE_RESULT';
+  dict[key] = status;
+  Pebble.sendAppMessage(dict, function(e) {}, function(e) {});
+}
+
 function fetchTrainData() {
   var settings = JSON.parse(localStorage.getItem('clay-settings') || '{}');
-  // KEY_HOLIDAY_CONFIG が "1" (able) の場合のみ API を取得
   var useHolidayApi = (settings.KEY_HOLIDAY_CONFIG === "1");
 
   if (useHolidayApi) {
@@ -102,7 +176,6 @@ function fetchTrainData() {
     xhrH.onerror = function() { getMainTimetable(); };
     xhrH.send();
   } else {
-    // APIを使用しない場合はフラグを false のままにして次へ
     isHoliday = false;
     getMainTimetable();
   }
@@ -130,6 +203,9 @@ function getMainTimetable() {
       sendToPebble();
     }
   };
+  xhr.onerror = function() {
+    console.log("Timetable fetch failed");
+  };
   xhr.send();
 }
 
@@ -139,7 +215,7 @@ function parseMarkdown(text, range, settings) {
   specialDates = []; specialSaturdays = [];
   var currentStation = null;
   var currentMode = "";
-  var currentHighlightColor = null; // #### 用
+  var currentHighlightColor = null;
 
   for (var i = 0; i < lines.length; i++) {
     var line = lines[i].trim();
@@ -195,18 +271,15 @@ function parseMarkdown(text, range, settings) {
   for (var s = 0; s < stations.length; s++) {
     var st = stations[s];
     
-    // 段階的フォールバック（Fallback Chain）による適正なダイヤデータの選択
     var selectedData = null;
 
     if (isHoliday || isSpecialHoliday || day === 0) {
-      // 日祝日または祝日判定API該当時：holiday -> weekday
       if (st.modes["holiday"] && st.modes["holiday"].trains.length > 0) {
         selectedData = st.modes["holiday"];
       } else {
         selectedData = st.modes["weekday"];
       }
     } else if (isSpecialSaturday || day === 6) {
-      // 土曜日または特定土曜日：saturday -> holiday -> weekday
       if (st.modes["saturday"] && st.modes["saturday"].trains.length > 0) {
         selectedData = st.modes["saturday"];
       } else if (st.modes["holiday"] && st.modes["holiday"].trains.length > 0) {
@@ -215,7 +288,6 @@ function parseMarkdown(text, range, settings) {
         selectedData = st.modes["weekday"];
       }
     } else {
-      // 平日：weekday
       selectedData = st.modes["weekday"];
     }
     
@@ -274,7 +346,6 @@ function sendToPebble() {
     if (platform === 'emery' || platform === 'gabbro') {
       dict['KEY_TYPE_TEXT'] = train.type || "";
       dict['KEY_DEST'] = train.dest || "";
-      // --- 追加：色情報を数値に変換して送信 ---
       dict['KEY_TYPE_COLOR'] = parseInt(train.typeColor, 16);
       dict['KEY_TYPE_BG_COLOR'] = parseInt(train.typeBgColor, 16);
     } else {

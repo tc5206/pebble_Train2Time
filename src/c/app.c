@@ -5,6 +5,9 @@ static TextLayer *s_time_layer, *s_station_layer, *s_type_layer, *s_dest_layer, 
 static BitmapLayer *s_icon_layer;
 static GBitmap *s_icon_bitmap = NULL;
 
+static TextLayer *s_toast_layer = NULL;
+static AppTimer *s_toast_timer = NULL;
+
 static GRect s_countdown_frame;
 static GColor s_highlight_bg_color;
 static GColor s_highlight_text_color;
@@ -12,6 +15,8 @@ static GColor s_highlight_text_color;
 static int s_target_hour = 0;
 static int s_target_min = 0;
 static bool s_data_received = false;
+
+static bool s_vibrated_3min = false;
 static bool s_vibrated_1min = false;
 static bool s_vibrated_0min = false;
 
@@ -58,6 +63,23 @@ static void request_train(int key) {
   }
 }
 
+static void toast_timer_callback(void *data) {
+  s_toast_timer = NULL;
+  if (s_toast_layer) {
+    layer_set_hidden(text_layer_get_layer(s_toast_layer), true);
+  }
+}
+
+static void show_toast(const char *text) {
+  if (!s_toast_layer) return;
+  text_layer_set_text(s_toast_layer, text);
+  layer_set_hidden(text_layer_get_layer(s_toast_layer), false);
+  if (s_toast_timer) {
+    app_timer_cancel(s_toast_timer);
+  }
+  s_toast_timer = app_timer_register(1000, toast_timer_callback, NULL);
+}
+
 static void update_time() {
   time_t temp = time(NULL);
   struct tm *tick_time = localtime(&temp);
@@ -85,10 +107,22 @@ static void update_countdown() {
   if (diff < 0) {
     int d = -diff;
     snprintf(s_count_buf, sizeof(s_count_buf), "%02d:%02d", d / 60, d % 60);
-    if (d <= 60 && !s_vibrated_1min) { vibes_short_pulse(); s_vibrated_1min = true; }
+
+    if (d <= 180 && !s_vibrated_3min) {
+      vibes_short_pulse();
+      s_vibrated_3min = true;
+    }
+    if (d <= 60 && !s_vibrated_1min) {
+      vibes_short_pulse();
+      s_vibrated_1min = true;
+    }
   } else if (diff <= 180) {
+    if (diff <= 2 && !s_vibrated_0min) {
+      vibes_double_pulse();
+      s_vibrated_0min = true;
+    }
+
     snprintf(s_count_buf, sizeof(s_count_buf), "%02d:%02d", diff / 60, diff % 60);
-    if (diff <= 2 && !s_vibrated_0min) { vibes_double_pulse(); s_vibrated_0min = true; }
     if (t->tm_sec % 2 == 0) {
       text_layer_set_text_color(s_countdown_layer, s_highlight_text_color);
       text_layer_set_background_color(s_countdown_layer, s_highlight_bg_color);
@@ -125,6 +159,17 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   Tuple *mn_t = dict_find(iterator, MESSAGE_KEY_KEY_MIN);
   Tuple *cl_t = dict_find(iterator, MESSAGE_KEY_KEY_HIGHLIGHT_COLOR);
   Tuple *ty_t = dict_find(iterator, MESSAGE_KEY_KEY_TYPE_TEXT);
+  Tuple *tl_res_t = dict_find(iterator, MESSAGE_KEY_KEY_TIMELINE_RESULT);
+
+  if (tl_res_t) {
+    if (tl_res_t->value->int32 == 1) {
+      show_toast("Added Pin!");
+    } else {
+      show_toast("Failed Pin");
+    }
+    return;
+  }
+
 #if defined(PBL_PLATFORM_EMERY) || defined(PBL_PLATFORM_GABBRO)
   Tuple *tc_t = dict_find(iterator, MESSAGE_KEY_KEY_TYPE_COLOR);
   Tuple *tb_t = dict_find(iterator, MESSAGE_KEY_KEY_TYPE_BG_COLOR);
@@ -187,10 +232,14 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   }
   if (mn_t) s_target_min = (int)mn_t->value->int32;
 
+  s_vibrated_3min = false;
+  s_vibrated_1min = false;
+  s_vibrated_0min = false;
+
   if (ic_t) {
     int icon_id = (int)ic_t->value->int32;
     if (s_icon_bitmap) gbitmap_destroy(s_icon_bitmap);
-    uint32_t res_id = (icon_id >= 0 && icon_id <= 15) ? S_ICON_IDS[icon_id] : RESOURCE_ID_IMAGE_ICON_15;
+    uint32_t res_id = (icon_id >= 0 && icon_id < (int)ARRAY_LENGTH(S_ICON_IDS)) ? S_ICON_IDS[icon_id] : RESOURCE_ID_IMAGE_ICON_15;
     s_icon_bitmap = gbitmap_create_with_resource(res_id);
     bitmap_layer_set_bitmap(s_icon_layer, s_icon_bitmap);
   }
@@ -199,7 +248,6 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   text_layer_set_font(s_countdown_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
 #endif
 
-  s_vibrated_1min = s_vibrated_0min = false;
   s_data_received = true;
 
   if (has_train) {
@@ -240,10 +288,8 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
 }
 
 static void center_long_click_handler(ClickRecognizerRef recognizer, void *context) {
-  // 完全にLoading状態へとステートを遷移
   s_data_received = false;
   
-  // 各テキストレイヤーの文字列をクリア（空文字化）
   text_layer_set_text(s_station_layer, "");
   text_layer_set_text(s_type_layer, "");
   text_layer_set_text(s_dest_layer, "");
@@ -258,12 +304,19 @@ static void center_long_click_handler(ClickRecognizerRef recognizer, void *conte
   
   update_countdown();
   
-  // スマホ（JS）側へURLトグル要求を送信
   DictionaryIterator *iter;
   if (app_message_outbox_begin(&iter) == APP_MSG_OK) {
     dict_write_uint8(iter, MESSAGE_KEY_REQUEST_TOGGLE_URL, 1); 
     app_message_outbox_send();
   }
+}
+
+static void up_long_click_handler(ClickRecognizerRef recognizer, void *context) {
+  request_train(MESSAGE_KEY_KEY_REQUEST_ADD_TIMELINE);
+}
+
+static void down_long_click_handler(ClickRecognizerRef recognizer, void *context) {
+  request_train(MESSAGE_KEY_KEY_REQUEST_ADD_TIMELINE);
 }
 
 static void up_click_handler(ClickRecognizerRef r, void *c) { request_train(MESSAGE_KEY_KEY_REQUEST_PREV); }
@@ -275,6 +328,8 @@ static void click_config_provider(void *c) {
   window_single_click_subscribe(BUTTON_ID_DOWN, down_click_handler);
   window_single_click_subscribe(BUTTON_ID_SELECT, center_click_handler);
   window_long_click_subscribe(BUTTON_ID_SELECT, 500, center_long_click_handler, NULL);
+  window_long_click_subscribe(BUTTON_ID_UP, 500, up_long_click_handler, NULL);
+  window_long_click_subscribe(BUTTON_ID_DOWN, 500, down_long_click_handler, NULL);
 }
 
 static void main_window_load(Window *window) {
@@ -319,9 +374,22 @@ static void main_window_load(Window *window) {
     text_layer_set_overflow_mode(layers[i], (i == 6) ? GTextOverflowModeWordWrap : GTextOverflowModeTrailingEllipsis);
     layer_add_child(w_layer, text_layer_get_layer(layers[i]));
   }
+
+  s_toast_layer = text_layer_create(GRect((w - 110) / 2, (h - 32) / 2, 110, 32));
+  text_layer_set_background_color(s_toast_layer, GColorBlack);
+  text_layer_set_text_color(s_toast_layer, GColorWhite);
+  text_layer_set_text_alignment(s_toast_layer, GTextAlignmentCenter);
+  text_layer_set_font(s_toast_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+  layer_set_hidden(text_layer_get_layer(s_toast_layer), true);
+  layer_add_child(w_layer, text_layer_get_layer(s_toast_layer));
 }
 
 static void main_window_unload(Window *window) {
+  if (s_toast_timer) {
+    app_timer_cancel(s_toast_timer);
+    s_toast_timer = NULL;
+  }
+  text_layer_destroy(s_toast_layer);
   text_layer_destroy(s_time_layer); text_layer_destroy(s_station_layer); text_layer_destroy(s_dest_layer); text_layer_destroy(s_countdown_layer); text_layer_destroy(s_depart_layer); text_layer_destroy(s_note1_layer); text_layer_destroy(s_type_layer); bitmap_layer_destroy(s_icon_layer);
   if (s_icon_bitmap) { gbitmap_destroy(s_icon_bitmap); s_icon_bitmap = NULL; }
 }

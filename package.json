@@ -34,7 +34,9 @@
             "KEY_TYPE_BG_COLOR",
             "KEY_URL_3",
             "KEY_URL_4",
-            "REQUEST_TOGGLE_URL"
+            "REQUEST_TOGGLE_URL",
+            "KEY_TIMELINE_RESULT",
+            "KEY_REQUEST_ADD_TIMELINE"
         ],
         "projectType": "native",
         "resources": {
@@ -153,5 +155,5 @@
             "watchface": false
         }
     },
-    "version": "2.11.0"
+    "version": "2.20.0"
 }
